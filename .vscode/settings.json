@@ -1,0 +1,6 @@
+{
+	"files.associations": {
+		"code": "cpp",
+		"*.mm": "cpp"
+	}
+}
