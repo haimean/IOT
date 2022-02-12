@@ -186,6 +186,7 @@ void enterPassword()
   lcd.print(" *** ALARM *** ");
   lcd.setCursor(0, 1);
   lcd.print("Pass>");
+  // while (activated)
   for (size_t i = 0; i < 3; i++)
   {
     keypressed = myKeypad.getKey();
