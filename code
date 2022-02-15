@@ -13,18 +13,13 @@
 #define trigPin 3
 #define echoPin 2
 
-long duration;
-int distance, initialDistance, currentDistance, i;
+int initialDistance, currentDistance, i;
 int screenOffMsg = 0;
 String password = "1234";
 String tempPassword;
-boolean activated = false; // State of the alarm
-boolean isActivated;
-boolean activateAlarm = false;
-boolean alarmActivated = false;
-boolean enteredPassword; // State of the entered password to stop the alarm
 boolean passChangeMode = false;
 boolean passChanged = false;
+boolean passTrue = false;
 
 const byte ROWS = 4; // four rows
 const byte COLS = 4; // four columns
@@ -51,146 +46,136 @@ void setup()
 
 void loop()
 {
- if (activateAlarm)
+ // Bắt đầu chương trình
+ lcd.clear();
+ lcd.setCursor(0, 0);
+ lcd.print("A - Activate");
+ lcd.setCursor(0, 1);
+ lcd.print("B - Change Pass");
+ screenOffMsg = 1;
+ keypressed = myKeypad.getKey();
+ // khóa
+ if (keypressed == 'A')
  {
-		lcd.clear();
-		lcd.setCursor(0, 0);
-		lcd.print("Alert will be");
-		lcd.setCursor(0, 1);
-		lcd.print("activated in");
-
-		int countdown = 9; // 9 seconds count down before activating the alarm
-		while (countdown != 0)
+		while (true)
 		{
-			lcd.setCursor(13, 1);
-			lcd.print(countdown);
-			countdown--;
-			tone(buzzer, 700, 100);
-			delay(1000);
+			beginLock();
+			currentDistance = getDistance() + 10;
+			if (currentDistance < initialDistance)
+			{
+				// nhập mật khẩu
+				inputPass()
+			}
+			if (passTrue == true)
+			{ // mật khẩu đúng quay về đầu vòng loop
+				lcd.setCursor(0, 0);
+				lcd.print("Password Correct");
+				break;
+			}
+			else
+			{ // mật khẩu sai -> khóa sau 10s
+				lcd.setCursor(0, 0);
+				lcd.print("Password InCorrect");
+				for (int i = 0; i < 10; i++)
+				{
+					tone(buzzer, 700, 100);
+					delay(1000);
+				}
+				continue;
+			}
 		}
-		lcd.clear();
-		lcd.setCursor(0, 0);
-		lcd.print("Alarm Activated!");
-		initialDistance = getDistance();
-		activateAlarm = false;
-		alarmActivated = true;
  }
-
- if (alarmActivated == true)
+ if (keypressed == 'B')
+ //đổi mật khẩu
  {
-		currentDistance = getDistance() + 10;
-		if (currentDistance < initialDistance)
-		{
-			tone(buzzer, 1000); // loa kêu
-			lcd.clear();
-			enterPassword();
-		}
+		changePass();
  }
-
- if (!alarmActivated)
+}
+void changePass()
+{
+ lcd.clear();
+ c int i = 1;
+ tone(buzzer, 2000, 100);
+ tempPassword = "";
+ lcd.setCursor(0, 0);
+ lcd.print("Current Password");
+ lcd.setCursor(0, 1);
+ lcd.print(">");
+ passChangeMode = true;
+ passChanged = true;
+ while (passChanged)
  {
-		if (screenOffMsg == 0)
-		{
-			lcd.clear();
-			lcd.setCursor(0, 0);
-			lcd.print("A - Activate");
-			lcd.setCursor(0, 1);
-			lcd.print("B - Change Pass");
-			screenOffMsg = 1;
-		}
 		keypressed = myKeypad.getKey();
-		if (keypressed == 'A')
-		{ // If A is pressed, activate the alarm
-			tone(buzzer, 1000, 200);
-			activateAlarm = true;
-		}
-		else if (keypressed == 'B')
+		if (keypressed != NO_KEY)
 		{
-			lcd.clear();
-			int i = 1;
-			tone(buzzer, 2000, 100);
+			if (keypressed == '0' || keypressed == '1' || keypressed == '2' || keypressed == '3' ||
+							keypressed == '4' || keypressed == '5' || keypressed == '6' || keypressed == '7' ||
+							keypressed == '8' || keypressed == '9')
+			{
+				tempPassword += keypressed;
+				lcd.setCursor(i, 1);
+				lcd.print("*");
+				i++;
+				tone(buzzer, 2000, 100);
+			}
+		}
+		if (i > 5 || keypressed == '#')
+		{
 			tempPassword = "";
+			i = 1;
+			lcd.clear();
 			lcd.setCursor(0, 0);
 			lcd.print("Current Password");
 			lcd.setCursor(0, 1);
 			lcd.print(">");
-			passChangeMode = true;
-			passChanged = true;
-			while (passChanged)
+		}
+		if (keypressed == '*')
+		{
+			i = 1;
+			tone(buzzer, 2000, 100);
+			if (password == tempPassword)
 			{
-				keypressed = myKeypad.getKey();
-				if (keypressed != NO_KEY)
+				tempPassword = "";
+				lcd.clear();
+				lcd.setCursor(0, 0);
+				lcd.print("Set New Password");
+				lcd.setCursor(0, 1);
+				lcd.print(">");
+				while (passChangeMode)
 				{
-					if (keypressed == '0' || keypressed == '1' || keypressed == '2' || keypressed == '3' ||
-									keypressed == '4' || keypressed == '5' || keypressed == '6' || keypressed == '7' ||
-									keypressed == '8' || keypressed == '9')
+					keypressed = myKeypad.getKey();
+					if (keypressed != NO_KEY)
 					{
-						tempPassword += keypressed;
-						lcd.setCursor(i, 1);
-						lcd.print("*");
-						i++;
-						tone(buzzer, 2000, 100);
+						if (keypressed == '0' || keypressed == '1' || keypressed == '2' || keypressed == '3' ||
+										keypressed == '4' || keypressed == '5' || keypressed == '6' || keypressed == '7' ||
+										keypressed == '8' || keypressed == '9')
+						{
+							tempPassword += keypressed;
+							lcd.setCursor(i, 1);
+							lcd.print("*");
+							i++;
+							tone(buzzer, 2000, 100);
+						}
 					}
-				}
-				if (i > 5 || keypressed == '#')
-				{
-					tempPassword = "";
-					i = 1;
-					lcd.clear();
-					lcd.setCursor(0, 0);
-					lcd.print("Current Password");
-					lcd.setCursor(0, 1);
-					lcd.print(">");
-				}
-				if (keypressed == '*')
-				{
-					i = 1;
-					tone(buzzer, 2000, 100);
-					if (password == tempPassword)
+					if (i > 5 || keypressed == '#')
 					{
 						tempPassword = "";
+						i = 1;
+						tone(buzzer, 2000, 100);
 						lcd.clear();
 						lcd.setCursor(0, 0);
 						lcd.print("Set New Password");
 						lcd.setCursor(0, 1);
 						lcd.print(">");
-						while (passChangeMode)
-						{
-							keypressed = myKeypad.getKey();
-							if (keypressed != NO_KEY)
-							{
-								if (keypressed == '0' || keypressed == '1' || keypressed == '2' || keypressed == '3' ||
-												keypressed == '4' || keypressed == '5' || keypressed == '6' || keypressed == '7' ||
-												keypressed == '8' || keypressed == '9')
-								{
-									tempPassword += keypressed;
-									lcd.setCursor(i, 1);
-									lcd.print("*");
-									i++;
-									tone(buzzer, 2000, 100);
-								}
-							}
-							if (i > 5 || keypressed == '#')
-							{
-								tempPassword = "";
-								i = 1;
-								tone(buzzer, 2000, 100);
-								lcd.clear();
-								lcd.setCursor(0, 0);
-								lcd.print("Set New Password");
-								lcd.setCursor(0, 1);
-								lcd.print(">");
-							}
-							if (keypressed == '*')
-							{
-								i = 1;
-								tone(buzzer, 2000, 100);
-								password = tempPassword;
-								passChangeMode = false;
-								passChanged = false;
-								screenOffMsg = 0;
-							}
-						}
+					}
+					if (keypressed == '*')
+					{
+						i = 1;
+						tone(buzzer, 2000, 100);
+						password = tempPassword;
+						passChangeMode = false;
+						passChanged = false;
+						screenOffMsg = 0;
 					}
 				}
 			}
@@ -198,18 +183,15 @@ void loop()
  }
 }
 
-void enterPassword()
+void inputPass()
 {
- int k = 5;
- tempPassword = "";
- activated = true;
- lcd.clear();
- lcd.setCursor(0, 0);
- lcd.print(" *** ALARM *** ");
- lcd.setCursor(0, 1);
- lcd.print("Pass>");
- while (activated)
+ for (int i = 0; i < 3; i++)
  {
+		lcd.clear();
+		lcd.setCursor(0, 0);
+		lcd.print(" *** ALARM *** ");
+		lcd.setCursor(0, 1);
+		lcd.print("Pass>");
 		keypressed = myKeypad.getKey();
 		if (keypressed != NO_KEY)
 		{
@@ -235,50 +217,44 @@ void enterPassword()
 		}
 		if (keypressed == '*')
 		{
-
 			if (tempPassword == password)
 			{
-				activated = false;
-				alarmActivated = false;
-				noTone(buzzer);
-				screenOffMsg = 0;
+				// activated = false;
+				// alarmActivated = false;
+				// noTone(buzzer);
+				// screenOffMsg = 0;
+				passTrue = true;
+				return;
 			}
 			else if (tempPassword != password)
 			{
+				passTrue = false;
+				lcd.clear();
 				lcd.setCursor(0, 1);
 				lcd.print("Wrong! Try Again");
 				delay(2000);
-				lcd.clear();
-				lcd.setCursor(0, 0);
-				lcd.print(" *** ALARM *** ");
-				lcd.setCursor(0, 1);
-				lcd.print("Pass>");
+				// lcd.setCursor(0, 0);
+				// lcd.print(" *** ALARM *** ");
+				// lcd.setCursor(0, 1);
+				// lcd.print("Pass>");
 			}
 		}
  }
 }
-// Custom function for the Ultrasonic sensor
-long getDistance()
+void beginLock()
 {
- // int i=10;
-
- // while( i<=10 ) {
- //  Clears the trigPin
- digitalWrite(trigPin, LOW);
- delayMicroseconds(2);
-
- // Sets the trigPin on HIGH state for 10 micro seconds
- digitalWrite(trigPin, HIGH);
- delayMicroseconds(10);
- digitalWrite(trigPin, LOW);
-
- // Reads the echoPin, returns the sound wave travel time in microseconds
- duration = pulseIn(echoPin, HIGH);
-
- // Calculating the distance
- distance = duration * 0.034 / 2;
- // sumDistance += distance;
- // }
- // int averageDistance= sumDistance/10;
- return distance;
+ lcd.clear();
+ lcd.setCursor(0, 0);
+ lcd.print("Alarm will be");
+ lcd.setCursor(0, 1);
+ lcd.print("activated in");
+ for (int i = 3; > 0; --)
+ {
+		lcd.print(i);
+		tone(buzzer, 700, 100);
+		delay(1000);
+ }
+ lcd.clear();
+ lcd.setCursor(0, 0);
+ lcd.print("Alarm Activated!");
 }
